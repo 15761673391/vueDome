@@ -1,122 +1,98 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br />
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener"
-        >vue-cli documentation</a
-      >.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel"
-          target="_blank"
-          rel="noopener"
-          >babel</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-router"
-          target="_blank"
-          rel="noopener"
-          >router</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint"
-          target="_blank"
-          rel="noopener"
-          >eslint</a
-        >
-      </li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li>
-        <a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a>
-      </li>
-      <li>
-        <a href="https://forum.vuejs.org" target="_blank" rel="noopener"
-          >Forum</a
-        >
-      </li>
-      <li>
-        <a href="https://chat.vuejs.org" target="_blank" rel="noopener"
-          >Community Chat</a
-        >
-      </li>
-      <li>
-        <a href="https://twitter.com/vuejs" target="_blank" rel="noopener"
-          >Twitter</a
-        >
-      </li>
-      <li>
-        <a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a>
-      </li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li>
-        <a href="https://router.vuejs.org" target="_blank" rel="noopener"
-          >vue-router</a
-        >
-      </li>
-      <li>
-        <a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a>
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-devtools#vue-devtools"
-          target="_blank"
-          rel="noopener"
-          >vue-devtools</a
-        >
-      </li>
-      <li>
-        <a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener"
-          >vue-loader</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/awesome-vue"
-          target="_blank"
-          rel="noopener"
-          >awesome-vue</a
-        >
-      </li>
-    </ul>
+  <div>
+    <div id="container"></div>
   </div>
 </template>
 
 <script>
+import * as THREE from "three"
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
+import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js"
+let container, clock
+let camera, scene, renderer, elf
 export default {
-  name: "HelloWorld",
-  props: {
-    msg: String,
+  data() {
+    return {
+      publicPath: process.env.BASE_URL
+    }
   },
-};
-</script>
+  mounted() {
+    this.init()
+    this.animate()
+  },
+  methods: {
+    init() {
+      console.log(1111)
+      container = document.getElementById("container")
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
+      camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        2000
+      )
+      camera.position.set(8, 10, 6)
+      camera.lookAt(0, 3, 0)
+
+      scene = new THREE.Scene() // 创建场景
+      clock = new THREE.Clock() // 创建时间
+      const loadingManager = new THREE.LoadingManager(function() {
+        scene.add(elf)
+      })
+      // 加载collad文件
+      const loader = new ColladaLoader(loadingManager)
+      console.log(333)
+      loader.load(`${this.publicPath}static/models/collada/house02.dae`, function(collada) {
+        elf = collada.scene
+      })
+      //
+      const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4)
+      scene.add(ambientLight)
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+      directionalLight.position.set(1, 1, 0).normalize()
+      scene.add(directionalLight)
+
+      //
+
+      renderer = new THREE.WebGLRenderer({ antialias: true })
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      container.appendChild(renderer.domElement) // 插入canves对象
+      // renderer.render(scene, camera)
+
+      const controls = new OrbitControls(camera, renderer.domElement)
+      controls.addEventListener("change", () => {
+        console.log(222)
+        renderer.render(scene, camera)
+      })
+      window.addEventListener("resize", this.onWindowResize)
+    },
+    onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    },
+    animate() {
+      requestAnimationFrame(this.animate)
+      // renderer.render(scene, camera)
+      this.render() // 实现动画
+    },
+    render() {
+      // 获取动画
+      const delta = clock.getDelta()
+      if (elf !== undefined) {
+        elf.rotation.z += delta * 0.5
+      }
+      renderer.render(scene, camera)
+    }
+  }
 }
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+</script>
+<style>
+#container {
+  position: absolute;
+  width: 600px;
+  height: 600px;
 }
 </style>
